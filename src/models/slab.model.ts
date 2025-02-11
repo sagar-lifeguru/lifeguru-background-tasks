@@ -46,11 +46,11 @@ import {
      * Possibly they intended defaultValue: 'consult'.
      * We'll replicate the snippet literally, but be aware this might cause runtime errors.
      */
+    // @Default(false as any) // Casting to any, because 'false' is not in the ENUM
     @Column(
       DataType.ENUM('consult', 'recharge')
     )
-    @Default(false as any) // Casting to any, because 'false' is not in the ENUM
-    slab_type!: 'consult' | 'recharge' | boolean;
+    slab_type!: 'consult' | 'recharge';
   
     @CreatedAt
     @Default(DataType.NOW)

@@ -129,7 +129,7 @@ export default {
 //   ProductBenefits,
 //   ProductsBenefitsMapping,
 //   ProductsPackagesMapping,
-//   ProductCategoryMapping,
+ // ProductCategoryMapping,
 //   ProductsAddonsMapping,
 //   ProductVarient,
 //   Temple,

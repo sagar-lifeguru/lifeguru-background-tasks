@@ -3,6 +3,7 @@ import { env } from './env.config';
 import { logger } from '../utils/logger';
 import path from 'path';
 
+
 // Create a new Sequelize instance using PostgreSQL connection parameters
 export const sequelize = new Sequelize({
   database: env.database.name,
@@ -11,8 +12,12 @@ export const sequelize = new Sequelize({
   host: env.database.host,
   port: env.database.port,
   dialect: 'postgres', // Since your .env specifies DB_DIALECT=postgres
-  models: [path.resolve(__dirname, '../models')], // Dynamically load models
-  logging: (msg) => logger.debug(msg), // Enable logging for debugging
+
+  //models: [path.resolve(__dirname, '../models')], // Dynamically load models
+  //models: [path.join(__dirname, '../models/*.ts')],
+  models: [path.join(__dirname, '../models/**/!(*index).ts')],
+
+  //logging: (msg) => logger.debug(msg), // Enable logging for debugging
   pool: {
     max: 10, // Maximum number of connections in pool
     min: 1, // Minimum number of connections in pool
