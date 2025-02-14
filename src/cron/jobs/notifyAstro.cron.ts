@@ -1,16 +1,13 @@
-import { Service } from 'typedi';
-import { BaseCron } from './base.cron';
-import { logger } from '../utils/logger';
-import Astrologer from '../models/astrologer.model';
-import AstrologerOnlineReport from '../models/astrologerOnlineReport.model';
+import { logger } from '../../utils/logger';
+import Astrologer from '../../models/astrologer.model';
+import AstrologerOnlineReport from '../../models/astrologerOnlineReport.model';
 import { Op } from 'sequelize';
 import moment from 'moment';
-import sendNotification from '../utils/sendNotification';
+import sendNotification from '../../utils/sendNotification';
 
-@Service()
-export class NotifyAstro extends BaseCron {
-  protected schedule = '*/5 * * * *';
-  protected name = 'notifyAstro';
+export const NotifyAstro = {
+  schedule: '*/5 * * * *',
+  name: 'notifyAstro',
 
   async execute(): Promise<void> {
     logger.info('Running notifyAstro cron job');

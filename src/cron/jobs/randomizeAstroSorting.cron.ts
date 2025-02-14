@@ -1,12 +1,9 @@
-import { Service } from 'typedi';
-import { BaseCron } from './base.cron';
-import { logger } from '../utils/logger';
-import Astrologer from '../models/astrologer.model';
+import { logger } from '../../utils/logger';
+import Astrologer from '../../models/astrologer.model';
 
-@Service()
-export class RandomizeAstroSorting extends BaseCron {
-  protected schedule = '*/30 * * * *'; // Run every 30 minutes
-  protected name = 'randomizeAstroSorting';
+export const RandomizeAstroSorting = {
+  schedule: '*/30 * * * *', // Run every 30 minutes
+  name: 'randomizeAstroSorting',
 
   async execute(): Promise<void> {
     logger.info('Running randomizeAstroSorting cron job');

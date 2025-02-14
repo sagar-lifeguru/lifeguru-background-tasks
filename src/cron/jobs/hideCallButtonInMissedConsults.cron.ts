@@ -1,14 +1,11 @@
-import { Service } from 'typedi';
-import { BaseCron } from './base.cron';
-import { logger } from '../utils/logger';
-import AstroNotifications from '../models/astroNotification.model';
+import { logger } from '../../utils/logger';
+import AstroNotifications from '../../models/astroNotification.model';
 import { Op } from 'sequelize';
 import moment from 'moment';
 
-@Service()
-export class HideCallButtonInMissedConsults extends BaseCron {
-  protected schedule = '0 * * * *'; // Run every hour
-  protected name = 'hideCallButtonInMissedConsults';
+export const HideCallButtonInMissedConsults = {
+  schedule: '0 * * * *', // Run every hour
+  name: 'hideCallButtonInMissedConsults',
 
   async execute(): Promise<void> {
     logger.info('Running hideCallButtonInMissedConsults cron job');

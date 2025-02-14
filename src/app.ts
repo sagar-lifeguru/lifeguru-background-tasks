@@ -3,10 +3,10 @@ import express from 'express';
 import { Container } from 'typedi';
 import { sequelize } from './config/database.config';
 import  redisClient from './config/redis.config';
-import { ResetAstroQuota } from './crons/resetAstroQuota.cron';
 import { logger } from './utils/logger';
 import { env } from './config/env.config';
 import { EmailConsumer } from './queues/consumers/email.consumer';
+import { initCronJobs } from './cron';
 // import swaggerUi from 'swagger-ui-express';
 // import { swaggerSpec } from './config/swagger.config';
 // import { errorMiddleware } from './middlewares/error.middleware';
@@ -47,9 +47,9 @@ async function initializeServices() {
       logger.error('Failed to initialize email consumer:', error);
     }
 
-    // Cron Jobs
-    const resetAstroQuota = Container.get(ResetAstroQuota);
-    resetAstroQuota.start();
+    // Initialize Cron Jobs
+    initCronJobs();
+    logger.info('Cron jobs initialized successfully');
 
     // Server port & host from env
     const port = env.server.port;
