@@ -3,12 +3,13 @@ import { Channel, Connection, connect } from 'amqplib';
 import { env } from '../../config/env.config';
 import { logger } from '../../utils/logger';
 import { EmailMessage } from '../queue.types';
+import { sendChildAstrologySuccessEmail, sendPoojaSuccessEmail, sendPoojaFailedEmail } from '../../utils/emailService';
 
 @Service()
 export class EmailConsumer {
     private channel: Channel = null!;
     private connection: Connection = null!;
-    private readonly queueName = 'user-test-queue-001';
+    private readonly queueName = 'send-email';
 
     async initialize(): Promise<void> {
         try {
@@ -32,7 +33,15 @@ export class EmailConsumer {
             logger.info('Processing message', JSON.parse(msg.content));
             const emailMessage: EmailMessage = JSON.parse(msg.content.toString());
             // Process email message here
+            if (emailMessage.type === 'child-astrology-success') {
+                await sendChildAstrologySuccessEmail(emailMessage);
+            } else if (emailMessage.type === 'pooja-success') {
+                await sendPoojaSuccessEmail(emailMessage);
+            } else if (emailMessage.type === 'pooja-failed') {
+                await sendPoojaFailedEmail(emailMessage);
+            }
             logger.info('Processing email message', emailMessage);
+
             this.channel.ack(msg);
         } catch (error) {
             // console.log('Error processing message', error);

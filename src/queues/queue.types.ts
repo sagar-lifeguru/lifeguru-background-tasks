@@ -1,5 +1,9 @@
 export interface EmailMessage {
-  to: string;
-  subject: string;
-     body: string;
+  type: 'child-astrology-success' | 'pooja-success' | 'pooja-failed';
+  userName: string;
+  userPhone: string;
+  paymentStatus: string;
+  productName: string;
+  amount: number;
+  requestId: string;
 }
