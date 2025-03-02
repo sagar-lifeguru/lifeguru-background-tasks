@@ -29,7 +29,7 @@ export const sequelize = new Sequelize({
   // },
   define: {
     timestamps: true, // Automatically add timestamps to models
-    underscored: true, // Use snake_case column names
+    // underscored: true, // Use snake_case column names
   },
 });
 
