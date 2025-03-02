@@ -48,7 +48,7 @@ const endLivestreamCall = async (data: any, reason: string): Promise<void> => {
       body: "Livestream call ended due to balance exhausted",
     };
 
-    await livestreamCallSettlement(call.id);
+    await livestreamCallSettlement(String(call.id));
 
     if (call.user_id) {
       const user = await User.findByPk(call.user_id);
