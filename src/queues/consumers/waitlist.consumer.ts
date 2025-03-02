@@ -86,7 +86,7 @@ export class WaitlistConsumer {
             call.status = status;
             call.call_status = 'ended';
             call.user_status = status;
-            call.endTime = endTime;
+            call.endTime = new Date(endTime);
             call.holdDuration = 0;
             call.callDuration = 0;
             await call.save();
@@ -166,7 +166,7 @@ export class WaitlistConsumer {
 
             // Update call status
             call.reason = call.call_status;
-            call.endTime = endTime;
+            call.endTime = new Date(endTime);
             call.holdDuration = holdDuration;
             call.callDuration = callDuration;
             call.status = status;
