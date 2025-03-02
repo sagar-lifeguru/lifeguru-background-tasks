@@ -2,50 +2,37 @@ import 'reflect-metadata';
 import express from 'express';
 import { Container } from 'typedi';
 import { sequelize } from './config/database.config';
-import  redisClient from './config/redis.config';
 import { logger } from './utils/logger';
 import { env } from './config/env.config';
 import { EmailConsumer } from './queues/consumers/email.consumer';
+import { WaitlistConsumer } from './queues/consumers/waitlist.consumer';
 import { initCronJobs } from './cron';
-// import swaggerUi from 'swagger-ui-express';
-// import { swaggerSpec } from './config/swagger.config';
-// import { errorMiddleware } from './middlewares/error.middleware';
-// import { EmailConsumer } from './queues/consumers/email.consumer';
 
 const app = express();
+const container = Container.of();
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Swagger
-// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// Initialize consumers
+const emailConsumer = container.get(EmailConsumer);
+const waitlistConsumer = container.get(WaitlistConsumer);
 
-// Routes
-// app.use('/api/users', userRoutes);
+// Start consumers
+Promise.all([
+  emailConsumer.initialize(),
+  waitlistConsumer.initialize()
+]).catch(error => {
+  logger.error('Failed to initialize queue consumers:', error);
+});
 
-// Error handling
-// app.use(errorMiddleware);
-
-// Initialize services
 async function initializeServices() {
   try {
     // Database
     await sequelize.authenticate();
     await sequelize.sync();
     logger.info(`Database connected to host: ${env.database.host}`);
-
-    // Redis
-    // await redisClient.connect();
-    // logger.info(`Redis connected on host: ${env.redis.host}`);
-
-    // RabbitMQ Consumer
-    try {
-      const emailConsumer = Container.get(EmailConsumer);
-      await emailConsumer.initialize();
-    } catch (error) {
-      logger.error('Failed to initialize email consumer:', error);
-    }
 
     // Initialize Cron Jobs
     initCronJobs();

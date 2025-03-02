@@ -7,7 +7,7 @@ import Transaction from '../models/transaction.model';
 import LivestreamCall from '../models/livestreamCall.model';
 import sendUserDebitMsg from './sendUserDebitMsg';
 
-async function livestreamCallSettlement(livestreamCallId: string): Promise<boolean> {
+async function livestreamCallSettlement(livestreamCallId: number): Promise<boolean> {
   const call = await LivestreamCall.findByPk(livestreamCallId);
   if (!call || Number(call.call_duration) <= 0) return false;
 

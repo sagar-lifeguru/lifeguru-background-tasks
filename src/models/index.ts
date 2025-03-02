@@ -19,7 +19,7 @@ import Transaction from "./transaction.model";
 import ExotelResponse from "./exotelResponse.model";
 import User from "./user.model";
 import UserCall from "./userCall.model";
-import WaitingUser from "./WaitingUser.model";
+import WaitingUser from "./waitingUser.model";
 import WalletOffer from "./walletOffer.model";
 import Offer from "./offer.model";
 import HoldCall from "./holdCall.model";
@@ -40,7 +40,7 @@ import Slab from "./slab.model";
 import AstrologerOnlineReport from "./astrologerOnlineReport.model";
 import ChatSummary from "./chatSummary.model";
 import HoroscopeData from "./horoscopeData.model";
-
+import AstroNotification from './astroNotification.model';
 //puja imports
 // import Product from "./product.model";
 // import ChildDetail from "./childDetail";
@@ -63,7 +63,6 @@ import HoroscopeData from "./horoscopeData.model";
 // import PujasHistory from "./pujasHistory";
 import UserDeviceDetails from "./userDeviceDetails.model";
 import AstrologerPricing from "./astrologerPricing.model";
-import AstroNotifications from "./astroNotification.model";
 import Livestream from "./livestream.model";
 import LivestreamEvent from "./livestreamEvent.model";
 import LivestreamCall from "./livestreamCall.model";
@@ -117,9 +116,8 @@ export default {
   LivestreamEvent,
   UpcomingLivestream,
   LivestreamCall,
-  AstroNotifications,
   AstrologerPricing,
-
+  AstroNotification,
 // Pooja tables
 //   Product,
 //   ChildDetail,

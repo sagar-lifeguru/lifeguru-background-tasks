@@ -17,75 +17,47 @@ import {
   import Astrologer from './astrologer.model';
   import UserCall from './userCall.model';
   
+  export type NotificationStatus = 'astro_missed' | 'notify' | 'user_left_waitlist';
+  
   @Table({
     tableName: 'astro_notification',
     timestamps: false, // We'll define created_at & updated_at manually
   })
-  export default class AstroNotifications extends Model {
+  export default class AstroNotification extends Model {
     @PrimaryKey
     @AutoIncrement
     @Column(DataType.INTEGER)
     id!: number;
   
-    @ForeignKey(() => User)
     @AllowNull(false)
-    @Column({
-      type: DataType.INTEGER,
-      references: {
-        model: 'users',
-        key: 'id',
-      },
-    })
+    @ForeignKey(() => User)
+    @Column(DataType.INTEGER)
     user_id!: number;
   
-    @BelongsTo(() => User)
-    user?: User;
-  
-    @ForeignKey(() => Astrologer)
     @AllowNull(false)
-    @Column({
-      type: DataType.INTEGER,
-      references: {
-        model: 'astrologers',
-        key: 'id',
-      },
-    })
+    @ForeignKey(() => Astrologer)
+    @Column(DataType.INTEGER)
     astro_id!: number;
   
-    @BelongsTo(() => Astrologer)
-    astrologer?: Astrologer;
-  
-    // user_call_id has belongsTo(UserCall), but no explicit "references" in your snippet
-    @ForeignKey(() => UserCall)
     @AllowNull(true)
+    @ForeignKey(() => UserCall)
     @Column(DataType.INTEGER)
-    user_call_id!: number | null;
+    user_call_id!: number;
   
-    @BelongsTo(() => UserCall)
-    userCall?: UserCall;
-  
-    @Column({
-      type: DataType.BOOLEAN,
-      defaultValue: false,
-    })
+    @Default(false)
+    @Column(DataType.BOOLEAN)
     is_read!: boolean;
   
-    @Column({
-      type: DataType.BOOLEAN,
-      defaultValue: false,
-    })
+    @Default(false)
+    @Column(DataType.BOOLEAN)
     is_vip_user!: boolean;
   
     @AllowNull(false)
-    @Column({
-      type: DataType.ENUM('astro_missed', 'notify'),
-    })
-    status!: 'astro_missed' | 'notify';
+    @Column(DataType.ENUM('astro_missed', 'notify', 'user_left_waitlist'))
+    status!: NotificationStatus;
   
-    @Column({
-      type: DataType.STRING,
-      defaultValue: 'chat',
-    })
+    @Default('chat')
+    @Column(DataType.STRING)
     call_type!: string;
   
     @Default(literal('CURRENT_TIMESTAMP'))
@@ -95,5 +67,14 @@ import {
     @Default(DataType.NOW)
     @Column(DataType.DATE)
     updated_at!: Date;
+  
+    @BelongsTo(() => UserCall)
+    userCall!: UserCall;
+  
+    @BelongsTo(() => User)
+    user!: User;
+  
+    @BelongsTo(() => Astrologer)
+    astrologer!: Astrologer;
   }
   

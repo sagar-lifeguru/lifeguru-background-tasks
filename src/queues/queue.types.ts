@@ -7,3 +7,14 @@ export interface EmailMessage {
   amount: number;
   requestId: string;
 }
+
+export interface WaitlistMessage {
+  status: string;
+  call: {
+    call_status: string;
+    user_status: string;
+    startTime: string;
+  };
+  user: any;
+  astrologer: any;
+}

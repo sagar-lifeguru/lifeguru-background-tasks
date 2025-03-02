@@ -9,6 +9,10 @@ import { ExpirePromoCashback } from './jobs/expirePromoCashback.cron';
 import { ExpireCashback } from './jobs/expireCashback.cron';
 import { exotelFailSafe } from './jobs/exotelFailSafe.cron';
 import { endLivestream } from './jobs/endLivestream.cron';
+import { abandonedCall } from './jobs/abandonedCall.cron';
+import { endInitCall } from './jobs/endInitCall.cron';
+import { endInitiatedLivestreamCallsJob } from './jobs/endInitiatedLivestreamCalls.cron';
+import { endAbandonedLivestreamCallsJob } from './jobs/endAbandonedLivestreamCalls.cron';
 
 interface CronTask {
   schedule: string;
@@ -48,6 +52,11 @@ const cronJobs: CronTask[] = [
     execute: ExpirePromoCashback.execute
   },
   {
+    schedule: ExpireCashback.schedule,
+    name: ExpireCashback.name,
+    execute: ExpireCashback.execute
+  },
+  {
     schedule: '*/5 * * * *',
     name: 'exotelFailSafe',
     execute: exotelFailSafe.execute
@@ -56,6 +65,26 @@ const cronJobs: CronTask[] = [
     schedule: '* * * * *',
     name: 'endLivestream', 
     execute: endLivestream
+  },
+  {
+    schedule: abandonedCall.schedule,
+    name: abandonedCall.name,
+    execute: abandonedCall.execute
+  },
+  {
+    schedule: endInitCall.schedule,
+    name: endInitCall.name,
+    execute: endInitCall.execute
+  },
+  {
+    schedule: endInitiatedLivestreamCallsJob.schedule,
+    name: endInitiatedLivestreamCallsJob.name,
+    execute: endInitiatedLivestreamCallsJob.execute
+  },
+  {
+    schedule: endAbandonedLivestreamCallsJob.schedule,
+    name: endAbandonedLivestreamCallsJob.name,
+    execute: endAbandonedLivestreamCallsJob.execute
   }
 ];
 
