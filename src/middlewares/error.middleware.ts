@@ -6,7 +6,7 @@ interface CustomError extends Error {
   isOperational?: boolean;
 }
 
-class AppError extends Error implements CustomError {
+class ApiError extends Error implements CustomError {
   statusCode: number;
   status: string;
   isOperational: boolean;
@@ -56,7 +56,7 @@ const errorHandler = (
 };
 
 const errorMiddleware = (error: unknown, req: Request, res: Response, next: NextFunction) => {
-  if (error instanceof AppError) {
+  if (error instanceof ApiError) {
     return errorHandler(error, req, res, next);
   }
 
@@ -101,4 +101,4 @@ const errorMiddleware = (error: unknown, req: Request, res: Response, next: Next
   });
 };
 
-export { AppError, errorHandler, errorMiddleware };
+export { ApiError, errorHandler, errorMiddleware };

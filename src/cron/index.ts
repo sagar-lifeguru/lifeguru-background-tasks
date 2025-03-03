@@ -13,6 +13,7 @@ import { abandonedCall } from './jobs/abandonedCall.cron';
 import { endInitCall } from './jobs/endInitCall.cron';
 import { endInitiatedLivestreamCallsJob } from './jobs/endInitiatedLivestreamCalls.cron';
 import { endAbandonedLivestreamCallsJob } from './jobs/endAbandonedLivestreamCalls.cron';
+import {checkPendingTransactionsJob} from './jobs/checkPendingTransactions.cron';
 
 interface CronTask {
   schedule: string;
@@ -85,6 +86,11 @@ const cronJobs: CronTask[] = [
     schedule: endAbandonedLivestreamCallsJob.schedule,
     name: endAbandonedLivestreamCallsJob.name,
     execute: endAbandonedLivestreamCallsJob.execute
+  },
+  {
+    schedule: checkPendingTransactionsJob.schedule,
+    name: checkPendingTransactionsJob.name,
+    execute: checkPendingTransactionsJob.execute
   }
 ];
 
