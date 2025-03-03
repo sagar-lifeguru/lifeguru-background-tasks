@@ -64,7 +64,7 @@ const envSchema = Joi.object({
 
   REDIS_HOST: Joi.string().required(),
   REDIS_PORT: Joi.number().integer().required(),
-  REDIS_PASS: Joi.string(),
+  REDIS_PASS: Joi.string().allow('').optional(),
 
   INTERAKT_TEMPLATE_ID: Joi.string().required(),
   INTERAKT_URL: Joi.string().uri().required(),
