@@ -1,18 +1,9 @@
 import PriceSlab from "../models/priceSlab.model";
 import Slab from "../models/slab.model";
 import UserCall from "../models/userCall.model";
-
+import User from '../models/user.model';
+import Astrologer from '../models/astrologer.model';
 import { Op } from "sequelize";
-
-interface Astro {
-    id: number;
-    quota_limit: number;
-    quota_used: number;
-}
-
-interface User {
-    id: number;
-}
 
 interface ConsultPrices {
   price_per_consult: number;
@@ -23,7 +14,7 @@ interface ConsultPrices {
 
 const calculateConsultPrice = async (
   consultType: string,
-  astro: Astro,
+  astro: Astrologer,
   user: User
 ): Promise<ConsultPrices | null> => {
   try {

@@ -13,6 +13,9 @@ export const NotifyAstro = {
     logger.info('Running notifyAstro cron job');
     
     try {
+      const notificationTimeDurations: number[] = process.env.NOTIFY_ASTRO_TIME_DIFF?.split(",").map(item => +item) || [];
+      console.log(notificationTimeDurations, "notificationTimeDurations----->");
+  
       const astrologers = await Astrologer.findAll({
         where: {
           is_delete: false,
@@ -21,48 +24,60 @@ export const NotifyAstro = {
           next_online_time: { [Op.ne]: null },
         },
       });
-      
+      console.log("NOTIFY ASTROs>>>>", astrologers.length);
+  
       if (!astrologers.length) return;
-      
+  
       for (const astro of astrologers) {
         const astroOnlineRec = await AstrologerOnlineReport.findOne({
           where: {
             astro_id: astro.id,
             actual_online_time: null,
-            notified: false,
           },
-          order: [['createdAt', 'DESC']],
+          order: [["createdAt", "DESC"]],
         });
-        
-        const currentTime = moment();
+  
+        const currentTime = moment().add(5, 'hours').add(30, 'minutes');
         const onlineTime = moment(astro.next_online_time);
-        const timeDiff = moment.duration(onlineTime.diff(currentTime)).asMinutes();
-        const notifyTimeDiff = parseInt(process.env.NOTIFY_ASTRO_TIME_DIFF || '10');
-        
+        const timeDiff = moment.duration(onlineTime.diff(currentTime));
+  
+        console.log(
+          "onlineTime ",
+          onlineTime.format(),
+          "currentTime ",
+          currentTime.format(),
+          "time diff: ",
+          timeDiff.asMinutes(),
+          " env value: ",
+          process.env.NOTIFY_ASTRO_TIME_DIFF
+        );
+  
         if (astro.is_chat_online || astro.is_voice_online) {
+          console.log("delete next online time");
           astro.next_online_time = null;
           await astro.save();
         } else {
-          if (timeDiff > 0 && timeDiff <= notifyTimeDiff) {
+          const timeDiffMinutes = timeDiff.asMinutes();
+          if (timeDiffMinutes > 0 && notificationTimeDurations.includes(Math.round(timeDiffMinutes))) {
             const NotifyAstro = {
-              notification_type: 'Online',
-              title: 'LifeGuru',
-              body: 'Your online scheduled time is approaching.',
+              notification_type: "Online",
+              title: "LifeGuru",
+              body: "Your online scheduled time is approaching.",
             };
             await sendNotification(astro.devicetoken, NotifyAstro);
             if (astroOnlineRec) {
               astroOnlineRec.notified = true;
               await astroOnlineRec.save();
             }
-            logger.info(`${astro.display_name} is notified`);
-          } else if (timeDiff <= 0) {
+            console.log(`${astro.display_name} is notified`);
+          } else if (timeDiffMinutes <= 0) {
             astro.next_online_time = null;
             await astro.save();
           }
         }
       }
     } catch (error) {
-      logger.error('Error in notifyAstro cron job:', error);
+      console.error("Error: ", error);
     }
   }
 }

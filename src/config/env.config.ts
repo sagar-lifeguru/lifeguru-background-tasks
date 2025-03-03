@@ -77,7 +77,7 @@ const envSchema = Joi.object({
   FIREBASE_URL: Joi.string().uri().required(),
   FIREBASE_LIVESTREAM_URL: Joi.string().uri().required(),
 
-  NOTIFY_ASTRO_TIME_DIFF: Joi.number().integer().required(),
+  NOTIFY_ASTRO_TIME_DIFF: Joi.string().required(),
 
   RAZORPAY_KEY_ID: Joi.string().required(),
   RAZORPAY_KEY_SECRET: Joi.string().required(),

@@ -11,6 +11,10 @@ import callSettlement from '../../utils/callSettlement';
 import updateWaitlist from '../../utils/updateWaitlist';
 import util from 'util';
 import redisClient from '../../config/redis.config';
+import UserCall from '../../models/userCall.model';
+import User from '../../models/user.model';
+import Astrologer from '../../models/astrologer.model';
+import moment from 'moment';
 
 //using util.promisify to make client.del return a promise. This will ensure proper async handling.
 const redisDelAsync = util.promisify(redisClient.del).bind(redisClient);
@@ -54,8 +58,9 @@ export class WaitlistConsumer {
                     await this.disconnectChat(call, user, astrologer, waitlistMessage.status);
                 } else if (call.call_status === 'initiated' && call.user_status === 'waiting') {
                     const endTime = new Date().toISOString();
+                    const startTime = moment(call.startTime).toISOString();
                     const callDuration = Math.floor(
-                        (new Date(endTime).getTime() - new Date(call.startTime).getTime()) / 1000 / 60
+                        (new Date(endTime).getTime() - new Date(startTime).getTime()) / 1000 / 60
                     );
                     
                     if (callDuration <= 1) {
@@ -76,7 +81,7 @@ export class WaitlistConsumer {
         }
     }
 
-    private async disconnectChat(call: any, user: any, astrologer: any, status: string): Promise<void> {
+    private async disconnectChat(call: UserCall, user: User, astrologer: Astrologer, status: string): Promise<void> {
         try {
             logger.info("inside disconnect chat fun");
             const endTime = new Date().toISOString();
@@ -166,7 +171,7 @@ export class WaitlistConsumer {
 
             // Update call status
             call.reason = call.call_status;
-            call.endTime = endTime;
+            call.endTime = new Date(endTime);
             call.holdDuration = holdDuration;
             call.callDuration = callDuration;
             call.status = status;
