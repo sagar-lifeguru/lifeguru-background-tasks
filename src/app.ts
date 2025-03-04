@@ -17,12 +17,12 @@ app.use(express.urlencoded({ extended: true }));
 
 // Initialize consumers
 const emailConsumer = container.get(EmailConsumer);
-const waitlistConsumer = container.get(WaitlistConsumer);
+// const waitlistConsumer = container.get(WaitlistConsumer);
 
 // Start consumers
 Promise.all([
   emailConsumer.initialize(),
-  waitlistConsumer.initialize()
+  // waitlistConsumer.initialize()
 ]).catch(error => {
   logger.error('Failed to initialize queue consumers:', error);
 });

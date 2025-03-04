@@ -64,7 +64,7 @@ export class WaitlistConsumer {
                     );
                     
                     if (callDuration <= 1) {
-                        // await this.disconnectChat(call, user, astrologer, waitlistMessage.status);
+                        await this.disconnectChat(call, user, astrologer, waitlistMessage.status);
                     } else {
                         await this.endChat(call, user, astrologer, waitlistMessage.status);
                     }
