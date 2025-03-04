@@ -70,7 +70,7 @@ export const sendChildAstrologySuccessEmail = async ({
 
   const mailOptions: EmailOptions = {
     from: 'satyendra@lifeguru.app',
-    to: ['admin@lifeguru.app', 'prathamesh@lifeguru.app'],
+    to: ['admin@lifeguru.app', 'prathamesh@lifeguru.app', 'alam@lifeguru.app'],
     subject: `Child Astrology Report Transaction Successful <> Customer Phone : ${userPhone}`,
     text: emailBody,
   };
@@ -112,7 +112,7 @@ export const sendPoojaSuccessEmail = async ({
 
   const mailOptions: EmailOptions = {
     from: 'satyendra@lifeguru.app',
-    to: ['prathamesh@lifeguru.app', 'achintya@lifeguru.app', 'janak@lifeguru.app'],
+    to: ['prathamesh@lifeguru.app', 'achintya@lifeguru.app', 'janak@lifeguru.app', 'alam@lifeguru.app'],
     subject: `[Puja] Payment Successful <> ${userName} : ${userPhone}`,
     text: emailBody,
   };

@@ -59,9 +59,13 @@ const endLivestreamCall = async (data: any, reason: string): Promise<void> => {
 
     if (call.astro_id) {
       const astrologer = await Astrologer.findByPk(call.astro_id);
-      const keyToDelete = `${astrologer?.astro_id}`;
-      await redisDelAsync(keyToDelete).catch((err: Error) => logger.error(err));
-
+      const currentKey = `astro_${astrologer?.astro_id}`;
+      try {
+        const deleteResult = redisDelAsync(currentKey);
+        logger.info(`Deleted Redis key: ${currentKey}`);
+      } catch (err) {
+        logger.error(`Error deleting key ${currentKey}:`, err);
+      }
       if (astrologer) {
         astrologer.is_busy = false;
         await astrologer.save();

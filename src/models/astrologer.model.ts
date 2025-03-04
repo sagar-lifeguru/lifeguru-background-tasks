@@ -11,6 +11,7 @@ import {
   AllowNull,
 } from 'sequelize-typescript';
 import { literal } from 'sequelize';
+import { UUID } from 'crypto';
 
 @Table({
   tableName: 'astrologers',
@@ -26,7 +27,7 @@ export default class Astrologer extends Model {
     type: DataType.UUID,
     defaultValue: DataType.UUIDV4,
   })
-  astro_id!: string;
+  astro_id!: UUID;
 
   @Column({
     type: DataType.STRING,

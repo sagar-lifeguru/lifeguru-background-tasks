@@ -182,15 +182,23 @@ const endinitCall = async (call: any, reason: string): Promise<void> => {
             }
           }
         } catch (error) {
+          console.log("Errorrrrr: ", error);
           logger.error("Error while marking astrologer offline forcefully:", error);
         }
       }
 
-      await redisDelAsync(astrologer.astro_id);
-
       if (waitCount === 0) {
         astrologer.is_busy = false;
         await astrologer.save();
+
+        const currentKey = `astro_${astrologer?.astro_id}`;
+        try {
+          const deleteResult = redisDelAsync(currentKey);
+          console.log("send astro notif 2", deleteResult);
+          logger.info(`Deleted Redis key: ${currentKey}`);
+        } catch (err) {
+          logger.error(`Error deleting key ${currentKey}:`, err);
+        }
       }
       await sendNotification(astrologer.devicetoken, userNotif);
     }

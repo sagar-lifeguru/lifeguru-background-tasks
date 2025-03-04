@@ -14,14 +14,14 @@ const redisDelAsync = util.promisify(redisClient.del).bind(redisClient);
 
 const deleteRedisKey = async (astrologer: Astrologer, isInCall = false) => {
   if (!isInCall) {
-    const keyToDelete = `${astrologer.astro_id}`;
-    const redisValue = await redisClient.get(keyToDelete);
+    const currentKey = `astro_${astrologer.astro_id}`;
+    const redisValue = await redisClient.get(currentKey);
     if (redisValue !== null) {
       try {
-        await redisDelAsync(keyToDelete);
-        logger.info(`Deleted Redis key: ${keyToDelete}`);
+        const deleteResult = redisDelAsync(currentKey);
+        logger.info(`Deleted Redis key: ${currentKey}`);
       } catch (err) {
-        logger.error(`Error deleting key ${keyToDelete}:`, err);
+        logger.error(`Error deleting key ${currentKey}:`, err);
       }
     }
   }
