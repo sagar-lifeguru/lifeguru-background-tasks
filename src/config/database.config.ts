@@ -13,7 +13,7 @@ export const sequelize = new Sequelize({
   port: env.database.port,
   dialect: 'postgres',
 
-  models: [path.join(__dirname, '../models/**/!(*index).ts')],
+  models: [path.join(__dirname, '../models/**/!(*index).{ts,js}')],
 
   //logging: (msg) => logger.debug(msg), // Enable logging for debugging
   pool: {
