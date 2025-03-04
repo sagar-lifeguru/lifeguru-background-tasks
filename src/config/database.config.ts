@@ -11,10 +11,8 @@ export const sequelize = new Sequelize({
   password: env.database.pass,
   host: env.database.host,
   port: env.database.port,
-  dialect: 'postgres', // Since your .env specifies DB_DIALECT=postgres
+  dialect: 'postgres',
 
-  //models: [path.resolve(__dirname, '../models')], // Dynamically load models
-  //models: [path.join(__dirname, '../models/*.ts')],
   models: [path.join(__dirname, '../models/**/!(*index).ts')],
 
   //logging: (msg) => logger.debug(msg), // Enable logging for debugging
@@ -24,9 +22,6 @@ export const sequelize = new Sequelize({
     acquire: 30000, // Maximum time (ms) a connection can be taken from pool before throwing error
     idle: 10000, // Maximum time (ms) a connection can be idle before being released
   },
-  // dialectOptions: {
-  //   ssl: env.database.ssl ? { require: true, rejectUnauthorized: false } : false, // SSL support if needed
-  // },
   define: {
     timestamps: true, // Automatically add timestamps to models
     // underscored: true, // Use snake_case column names

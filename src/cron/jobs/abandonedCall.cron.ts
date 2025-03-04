@@ -12,7 +12,7 @@ import { CronJob } from './base.cron';
 
 const redisDelAsync = util.promisify(redisClient.del).bind(redisClient);
 
-const endCall = async (call: any, reason: string): Promise<boolean> => {
+const endCall = async (call: UserCall, reason: string): Promise<boolean> => {
   try {
     let call_status = call.call_status;
     let c_status = call.status;
@@ -126,6 +126,7 @@ export const abandonedCall: CronJob = {
       
       logger.info(`Processed ${abandoned_calls.length} abandoned calls`);
     } catch (error) {
+      console.log("Error: ", error);
       logger.error('Error in Abandoned Call cron job:', error);
     }
   }
