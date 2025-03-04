@@ -14,7 +14,6 @@ import {
   @Table({
     tableName: 'commisions',
     timestamps: true,
-    updatedAt: false,
   })
   export default class Commision extends Model {
     @PrimaryKey

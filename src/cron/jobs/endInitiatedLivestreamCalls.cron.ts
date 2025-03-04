@@ -46,13 +46,15 @@ const endinitLivestreamCall = async (call: any, reason: string): Promise<void> =
       });
 
       const astrologer = await Astrologer.findByPk(call.astro_id);
-      const keyToDelete = `${astrologer?.astro_id}`;
-      await redisDelAsync(keyToDelete).catch((err: Error) => logger.error(err));
-
+      
       if (astrologer) {
-        const keyToDelete = `${astrologer.astro_id}`;
-        await redisDelAsync(keyToDelete).catch((err: Error) => logger.error(err));
-
+        const currentKey = `astro_${astrologer?.astro_id}`;
+        try {
+          const deleteResult = redisDelAsync(currentKey);
+          logger.info(`Deleted Redis key: ${currentKey}`);
+        } catch (err) {
+          logger.error(`Error deleting key ${currentKey}:`, err);
+        }
         if (waitCount === 0) {
           astrologer.is_busy = false;
           await astrologer.save();

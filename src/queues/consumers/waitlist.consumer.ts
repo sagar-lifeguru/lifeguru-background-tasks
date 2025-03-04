@@ -125,13 +125,13 @@ export class WaitlistConsumer {
 
             await sendNotification(astrologer.devicetoken, endNotification);
 
-            const keyToDelete = `${astrologer.astro_id}`;
+            const currentKey = `astro_${astrologer?.astro_id}`;
             try {
-                await redisDelAsync(keyToDelete);
-                logger.info(`Deleted Redis key: ${keyToDelete}`);
-              } catch (err) {
-                logger.error(`Error deleting key ${keyToDelete}:`, err);
-              }
+                const deleteResult = redisDelAsync(currentKey);
+                logger.info(`Deleted Redis key: ${currentKey}`);
+            } catch (err) {
+                logger.error(`Error deleting key ${currentKey}:`, err);
+            }
 
             logger.info(`Chat disconnected for call ${call.id}`);
         } catch (error) {
@@ -202,9 +202,9 @@ export class WaitlistConsumer {
             await delay(200);
             await sendNotification(astrologer.devicetoken, endNotification);
 
-            const keyToDelete = `${astrologer.astro_id}`;
+            const keyToDelete = `astro_${astrologer.astro_id}`;
             try {
-                await redisDelAsync(keyToDelete);
+                const deleteResult = redisDelAsync(keyToDelete);
                 logger.info(`Deleted Redis key: ${keyToDelete}`);
               } catch (err) {
                 logger.error(`Error deleting key ${keyToDelete}:`, err);

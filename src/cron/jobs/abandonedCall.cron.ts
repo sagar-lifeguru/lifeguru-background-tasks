@@ -47,8 +47,11 @@ const endCall = async (call: UserCall, reason: string): Promise<boolean> => {
       title: "User Balance Exhausted",
       body: "Chat ended due to balance exhausted",
     };
-
-    await callSettlement(call.channelId);
+    try { 
+      await callSettlement(call.channelId);
+    } catch (error: any) {
+      console.log("Errorrrr: ", error);
+    }
 
     if (call.userId) {
       const user = await User.findByPk(call.userId);
@@ -58,6 +61,7 @@ const endCall = async (call: UserCall, reason: string): Promise<boolean> => {
     }
 
     if (call.astroId) {
+      console.log("send astro notif 1");
       const waitCount = await WaitingUser.count({
         where: {
           astro_id: call.astroId,
@@ -69,19 +73,25 @@ const endCall = async (call: UserCall, reason: string): Promise<boolean> => {
       const astrologer = await Astrologer.findByPk(call.astroId);
       
       if (astrologer) {
-        await redisDelAsync(astrologer.astro_id).catch((err: any) => 
-          logger.error(`Error deleting key ${astrologer.astro_id}:`, err)
-        );
-
         if (waitCount === 0) {
           astrologer.is_busy = false;
           await astrologer.save();
+          const currentKey = `astro_${astrologer?.astro_id}`;
+          try {
+            const deleteResult = redisDelAsync(currentKey);
+            console.log("send astro notif 2", deleteResult);
+            logger.info(`Deleted Redis key: ${currentKey}`);
+          } catch (err) {
+            logger.error(`Error deleting key ${currentKey}:`, err);
+          }
         }
         await sendNotification(astrologer.devicetoken, astroNotif);
+        console.log("send astro notif 3");
       }
     }
     return true;
   } catch (error) {
+    console.log("Error: ", error);
     logger.error("Error in ending call:", error);
     return false;
   }

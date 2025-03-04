@@ -12,7 +12,7 @@ export const expireRedisKeys = async (): Promise<void> => {
   logger.info('Running expireRedisKeys job');
   
   try {
-    const keys = await redisClient.keys('*');
+    const keys = await redisClient.keys("astro_*");
     
     for (const currentKey of keys) {
       const redisValue = await redisClient.get(currentKey);
@@ -23,7 +23,7 @@ export const expireRedisKeys = async (): Promise<void> => {
         continue;
       }
       
-      const astro = await Astrologer.findOne({ where: { astro_id: currentKey } });
+      const astro = await Astrologer.findOne({ where: { astro_id: currentKey.split("_")[1] } });
       if (!astro) continue;
       
       const ongoingCallAstro = await UserCall.count({
@@ -35,7 +35,7 @@ export const expireRedisKeys = async (): Promise<void> => {
       
       if (ongoingCallAstro <= 0) {
         try {
-          await redisDelAsync(currentKey);
+          const deleteResult = redisDelAsync(currentKey);
           logger.info(`Deleted Redis key: ${currentKey}`);
         } catch (err) {
           logger.error(`Error deleting key ${currentKey}:`, err);
