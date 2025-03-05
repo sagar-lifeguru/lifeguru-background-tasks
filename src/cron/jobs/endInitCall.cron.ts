@@ -190,7 +190,11 @@ const endinitCall = async (call: any, reason: string): Promise<void> => {
       if (waitCount === 0) {
         astrologer.is_busy = false;
         await astrologer.save();
-
+        try {
+      await sendNotification(astrologer.devicetoken, userNotif);
+        } catch (error) {
+          console.log("Error sending notification: ",error)
+        }
         const currentKey = `astro_${astrologer?.astro_id}`;
         try {
           const deleteResult = redisDelAsync(currentKey);
@@ -200,7 +204,6 @@ const endinitCall = async (call: any, reason: string): Promise<void> => {
           logger.error(`Error deleting key ${currentKey}:`, err);
         }
       }
-      await sendNotification(astrologer.devicetoken, userNotif);
     }
   } catch (error) {
     logger.error("Error in ending call:", error);

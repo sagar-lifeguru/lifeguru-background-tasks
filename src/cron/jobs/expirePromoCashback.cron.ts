@@ -5,7 +5,8 @@ import { Op } from 'sequelize';
 import moment from 'moment';
 
 export const ExpirePromoCashback = {
-  schedule: '0 5 * * *', // Run daily at 5:00 AM
+  // schedule: '0 5 * * *', // Run daily at 5:00 AM
+  schedule: '*/5 * * * *',
   name: 'expirePromoCashback',
 
   async execute(): Promise<void> {
