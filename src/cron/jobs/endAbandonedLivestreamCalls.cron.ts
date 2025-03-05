@@ -59,17 +59,21 @@ const endLivestreamCall = async (data: any, reason: string): Promise<void> => {
 
     if (call.astro_id) {
       const astrologer = await Astrologer.findByPk(call.astro_id);
-      const currentKey = `astro_${astrologer?.astro_id}`;
+      if (astrologer) {
+        astrologer.is_busy = false;
+        await astrologer.save();
+        try {
+          await sendNotification(astrologer.devicetoken, astroNotif); 
+        } catch (error) {
+          console.log("Error in sending fcm token: ", error);
+        }
+        const currentKey = `${astrologer?.astro_id}_livestream`;
       try {
         const deleteResult = redisDelAsync(currentKey);
         logger.info(`Deleted Redis key: ${currentKey}`);
       } catch (err) {
         logger.error(`Error deleting key ${currentKey}:`, err);
       }
-      if (astrologer) {
-        astrologer.is_busy = false;
-        await astrologer.save();
-        await sendNotification(astrologer.devicetoken, astroNotif);
       }
     }
   } catch (error) {

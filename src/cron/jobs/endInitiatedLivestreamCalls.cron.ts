@@ -26,7 +26,7 @@ const endinitLivestreamCall = async (call: any, reason: string): Promise<void> =
       chat_id: "",
       channel_name: "",
       title: "LifeGuru",
-      body: "Chat ended",
+      body: "Call connection request ended",
     };
 
     if (call.user_id) {
@@ -48,18 +48,22 @@ const endinitLivestreamCall = async (call: any, reason: string): Promise<void> =
       const astrologer = await Astrologer.findByPk(call.astro_id);
       
       if (astrologer) {
-        const currentKey = `astro_${astrologer?.astro_id}`;
-        try {
-          const deleteResult = redisDelAsync(currentKey);
-          logger.info(`Deleted Redis key: ${currentKey}`);
-        } catch (err) {
-          logger.error(`Error deleting key ${currentKey}:`, err);
-        }
         if (waitCount === 0) {
           astrologer.is_busy = false;
           await astrologer.save();
-        }
+          try {
         await sendNotification(astrologer.devicetoken, userNotif);
+          } catch (error) {
+            console.log("Error in sending fcm token: ", error);
+          }
+          const currentKey = `${astrologer?.astro_id}_livestream`;
+          try {
+            const deleteResult = redisDelAsync(currentKey);
+            logger.info(`Deleted Redis key: ${currentKey}`);
+          } catch (err) {
+            logger.error(`Error deleting key ${currentKey}:`, err);
+          }
+        }
       }
     }
   } catch (error) {
