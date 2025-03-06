@@ -44,7 +44,7 @@ export class EmailConsumer {
 
             this.channel.ack(msg);
         } catch (error) {
-            // console.log('Error processing message', error);
+            console.log('Error processing message: ', error);
             logger.error('Error processing message', error);
             this.channel.nack(msg);
         }

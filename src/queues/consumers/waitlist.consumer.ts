@@ -3,40 +3,40 @@ import { Channel, Connection, connect } from 'amqplib';
 import { env } from '../../config/env.config';
 import { logger } from '../../utils/logger';
 import { WaitlistMessage } from '../queue.types';
-import HoldCall from '../../models/holdCall.model';
-import UserFcmToken from '../../models/userFcmToken.model';
-import AstroNotifications from '../../models/astroNotification.model';  
-import sendNotification  from '../../utils/sendNotification';
-import callSettlement from '../../utils/callSettlement';
+import sendNotification from '../../utils/sendNotification';
 import updateWaitlist from '../../utils/updateWaitlist';
-import util from 'util';
 import redisClient from '../../config/redis.config';
 import UserCall from '../../models/userCall.model';
 import User from '../../models/user.model';
+import UserFcmToken from '../../models/userFcmToken.model';
 import Astrologer from '../../models/astrologer.model';
-import moment from 'moment';
+import AstroNotification from '../../models/astroNotification.model';
+import callSettlement from '../../utils/callSettlement';
+import { ApiError } from '../../middlewares/error.middleware';
 
-//using util.promisify to make client.del return a promise. This will ensure proper async handling.
+import moment from 'moment';
+import util from 'util';
+import { UUID } from 'crypto';
+
 const redisDelAsync = util.promisify(redisClient.del).bind(redisClient);
 
-const delay = (ms: number): Promise<void> => {
-    return new Promise<void>((resolve) => {
-        setTimeout(resolve, ms);
-    });
-};
 @Service()
 export class WaitlistConsumer {
     private channel: Channel = null!;
     private connection: Connection = null!;
-    private readonly queueName = 'scheduled_task_queue';
 
     async initialize(): Promise<void> {
         try {
             this.connection = await connect(env.rabbitmq.url);
             this.channel = await this.connection.createChannel();
-            await this.channel.assertQueue(this.queueName);
 
-            this.channel.consume(this.queueName, this.processMessage.bind(this));
+            const astrologers = await Astrologer.findAll({
+                where: { is_delete: false, status: true, is_verified: true }
+            });
+            for (const astro of astrologers) {
+                await this.setupAstrologerQueue(astro.astro_id);
+            }
+
             logger.info('Waitlist consumer initialized');
         } catch (error) {
             logger.error('Failed to initialize waitlist consumer: ', error);
@@ -44,44 +44,96 @@ export class WaitlistConsumer {
         }
     }
 
-    private async processMessage(msg: any): Promise<void> {
-        if (!msg) return;
+    private async setupAstrologerQueue(astroId: UUID): Promise<void> {
+        const delayExchange = `waitlist_delay_queue_${astroId}`;
+        const queueName = `scheduled_task_queue_${astroId}`;
 
-        try {
-            logger.info('Processing waitlist message', JSON.parse(msg.content));
-            const waitlistMessage: WaitlistMessage = JSON.parse(msg.content.toString());
-            
-            if (waitlistMessage.status === 'disconnect_user') {
-                const { call, user, astrologer } = waitlistMessage;
-                
-                if (call.call_status === 'waiting') {
-                    await this.disconnectChat(call, user, astrologer, waitlistMessage.status);
-                } else if (call.call_status === 'initiated' && call.user_status === 'waiting') {
-                    const endTime = new Date().toISOString();
-                    const startTime = moment(call.startTime).toISOString();
-                    const callDuration = Math.floor(
-                        (new Date(endTime).getTime() - new Date(startTime).getTime()) / 1000 / 60
-                    );
-                    
-                    if (callDuration <= 1) {
-                        await this.disconnectChat(call, user, astrologer, waitlistMessage.status);
-                    } else {
-                        await this.endChat(call, user, astrologer, waitlistMessage.status);
-                    }
-                } else {
-                    throw new Error('Not able to end');
-                }
+        // Using TTL + Dead Letter Exchange instead of x-delayed-message
+        await this.channel.assertExchange(delayExchange, 'direct', { durable: true });
+
+        await this.channel.assertQueue(queueName, {
+            durable: true,
+            arguments: {
+                'x-message-ttl': 180000, // 3-minute delay
+                'x-dead-letter-exchange': delayExchange // Forward expired messages
             }
-            
-            logger.info('Processed waitlist message', waitlistMessage);
-            this.channel.ack(msg);
-        } catch (error) {
-            logger.error('Error processing waitlist message', error);
-            this.channel.nack(msg);
-        }
+        });
+
+        await this.channel.bindQueue(queueName, delayExchange, queueName);
+
+        this.channel.consume(queueName, async (msg) => {
+            if (!msg) return;
+            try {
+                const waitlistMessage: WaitlistMessage = JSON.parse(msg.content.toString());
+                logger.info(`Processing waitlist message for astrologer ${astroId}`, waitlistMessage);
+                await this.processWaitlist(waitlistMessage);
+                this.channel.ack(msg);
+            } catch (error) {
+                logger.error('Error processing waitlist message', error);
+                this.channel.nack(msg);
+            }
+        });
+
+        logger.info(`Listening to queue: ${queueName}`);
     }
 
-    private async disconnectChat(call: UserCall, user: User, astrologer: Astrologer, status: string): Promise<void> {
+    private async processWaitlist(waitlistMessage: any): Promise<void> {
+        if (!waitlistMessage) return;
+        try {    
+            const { astroId, userId, channelId, callType } = waitlistMessage;
+            const user = await User.findByPk(userId);
+            const astrologer = await Astrologer.findByPk(astroId);
+            let call: UserCall | null = null;
+            if (callType === 'chat') {
+                call = await UserCall.findOne({ where: { channelId: channelId } });
+              } else if (callType === 'call') {
+                call = await UserCall.findOne({ where: { id: channelId } });
+              }
+            if (!user || !astrologer || !call) {
+                logger.warn('User, Astrologer, or call not found');
+                return;
+            }
+            logger.info(`Removing user ${userId} from astrologer ${astroId} waitlist`);
+            const status = 'waitlist_removal';
+            if(call.call_status == 'waiting'){
+                await disconnectChat(call, user, astrologer, status)
+            }else if(call && call.call_status == 'initiated' && call.user_status == 'waiting' ){
+                let endTime = new Date().toISOString();
+                let startTime = moment(call.startTime).toISOString();
+                let callDuration = Math.floor((new Date(endTime).getTime() - new Date(startTime).getTime()) / 1000 / 60);
+                if(callDuration <= 1){
+                    await disconnectChat(call, user, astrologer, status)
+                }else{
+                    await endChat(call, user, astrologer, status)
+                }
+            }else{
+                throw new ApiError('Automatic waitlist removal throws error', 200);
+            }
+            const endNotification = {
+                notification_type: 'waitlist_expired',
+                firebaseChId: call.firebaseChId,
+                channelId: call.channelId,
+                title: 'LifeGuru',
+                body: 'Your waitlist turn has expired. Please try again later.',
+            };
+            await sendNotification(user.device_token, endNotification);
+            // this.channel.ack(waitlistMessage);
+        } catch (error) {
+            // console.log('Error processing message', error);
+            logger.error('Error processing message', error);
+            // this.channel.nack(waitlistMessage);
+        }
+    }
+}
+
+
+    const delay = (ms: number): Promise<void> => {
+        return new Promise<void>((resolve) => {
+            setTimeout(resolve, ms);
+        });
+    };
+
+    const disconnectChat = async (call: UserCall, user: User, astrologer: Astrologer, status: string): Promise<void> =>{
         try {
             logger.info("inside disconnect chat fun");
             const endTime = new Date().toISOString();
@@ -98,7 +150,7 @@ export class WaitlistConsumer {
             
             await updateWaitlist(call, astrologer, status);
 
-            await AstroNotifications.create({
+            await AstroNotification.create({
                 user_id: call.userId,
                 astro_id: call.astroId,
                 user_call_id: call.id,
@@ -132,47 +184,28 @@ export class WaitlistConsumer {
             } catch (err) {
                 logger.error(`Error deleting key ${currentKey}:`, err);
             }
-
             logger.info(`Chat disconnected for call ${call.id}`);
         } catch (error) {
+            console.log("disconnect chat error log: ", error);
             logger.error('Error in disconnectChat:', error);
             throw error;
         }
     }
-
-    private async endChat(call: any, user: any, astrologer: any, status: string): Promise<void> {
+    const endChat = async(call: any, user: User, astrologer: Astrologer, status: string): Promise<void> => {
         try {
             let endTime : string | undefined = new Date().toISOString();
-
-            // if (call.status === 'hold') {
-            //     const holdCall = await HoldCall.findOne({ 
-            //         where: { channelId: call.channelId, status: 'pending' } 
-            //     });
-            //     endTime = holdCall?.startTime;
-            // }
 
             let callDuration = Math.ceil(
                 (new Date(endTime).getTime() - new Date(call.startTime).getTime()) / 1000 / 60
             );
             
-            let holdDuration = 0;
-            const holdTime = await HoldCall.sum('holdDuration', { 
-                where: { channelId: call.channelId, status: 'complete' } 
-            });
-            holdDuration = holdTime || 0;
-            logger.info('hold time user status update', holdTime);
-            callDuration = callDuration - holdTime;
-
             if ((call.call_status === 'initiated' && call.astro_status === 'waiting') || 
                 call.user_status === 'waiting') {
                 callDuration = 0;
-                holdDuration = 0;
             }
-
             // Update call status
             call.reason = call.call_status;
             call.endTime = new Date(endTime);
-            call.holdDuration = holdDuration;
             call.callDuration = callDuration;
             call.status = status;
             call.call_status = 'ended';
@@ -212,8 +245,8 @@ export class WaitlistConsumer {
 
             logger.info(`Chat ended for call ${call.id}`);
         } catch (error) {
+            console.log("end chat error log: ", error);
             logger.error('Error in endChat:', error);
             throw error;
         }
     }
-}

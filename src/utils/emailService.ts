@@ -112,7 +112,7 @@ export const sendPoojaSuccessEmail = async ({
 
   const mailOptions: EmailOptions = {
     from: 'satyendra@lifeguru.app',
-    to: ['prathamesh@lifeguru.app', 'achintya@lifeguru.app', 'janak@lifeguru.app', 'alam@lifeguru.app'],
+    to: ['prathamesh@lifeguru.app', 'achintya@lifeguru.app', 'janak@lifeguru.app','sagar@lifeguru.app', 'alam@lifeguru.app'],
     subject: `[Puja] Payment Successful <> ${userName} : ${userPhone}`,
     text: emailBody,
   };
@@ -145,27 +145,10 @@ export const sendPoojaFailedEmail = async ({
 
   const mailOptions: EmailOptions = {
     from: 'satyendra@lifeguru.app',
-    to: ['prathamesh@lifeguru.app', 'achintya@lifeguru.app', 'janak@lifeguru.app'],
+    to: ['prathamesh@lifeguru.app', 'achintya@lifeguru.app', 'janak@lifeguru.app','sagar@lifeguru.app'],
     subject: `[Puja] Payment Failed <> ${userName} : ${userPhone}`,
     text: emailBody,
   };
 
   await sendEmail(mailOptions);
 };
-
-// // For Child Astrology
-// await sendChildAstrologySuccessEmail({
-//   userPhone: "1234567890",
-//   requestId: "REQ123",
-//   paymentStatus: "SUCCESS"
-// });
-
-// // For Pooja Success/Failure
-// await sendPoojaSuccessEmail({
-//   userName: "John Doe",
-//   userPhone: "1234567890",
-//   paymentStatus: "SUCCESS",
-//   productName: "Ganesh Puja",
-//   amount: 1000,
-//   requestId: "REQ123"
-// }); 
