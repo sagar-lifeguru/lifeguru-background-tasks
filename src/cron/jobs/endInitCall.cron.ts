@@ -10,6 +10,7 @@ import redisClient from '../../config/redis.config';
 import sendNotification from '../../utils/sendNotification';
 import { CronJob } from './base.cron';
 import util from 'util';
+import {removeWaitlistQueue} from '../../queues/producer/waitlistQueue';
 
 const redisDelAsync = util.promisify(redisClient.del).bind(redisClient);
 const redisSetAsync = util.promisify(redisClient.set).bind(redisClient);
@@ -67,7 +68,7 @@ const endinitCall = async (call: any, reason: string): Promise<void> => {
     }
 
     if (call.astroId) {
-      const waitCount = await WaitingUser.count({
+      const waitCount = await WaitingUser.findAll({
         where: {
           astro_id: call.astroId,
           status: true,
@@ -187,11 +188,11 @@ const endinitCall = async (call: any, reason: string): Promise<void> => {
         }
       }
 
-      if (waitCount === 0) {
+      if (waitCount?.length === 0) {
         astrologer.is_busy = false;
         await astrologer.save();
         try {
-      await sendNotification(astrologer.devicetoken, userNotif);
+          await sendNotification(astrologer.devicetoken, userNotif);
         } catch (error) {
           console.log("Error sending notification: ",error)
         }
@@ -202,6 +203,12 @@ const endinitCall = async (call: any, reason: string): Promise<void> => {
           logger.info(`Deleted Redis key: ${currentKey}`);
         } catch (err) {
           logger.error(`Error deleting key ${currentKey}:`, err);
+        }
+      }  else {
+        if(waitCount[0].call_type === 'chat'){ 
+          await removeWaitlistQueue({astroId: astrologer.astro_id, userId: waitCount[0].user_id, channelId: waitCount[0].channelId, callType:waitCount[0].call_type}, 180000);
+        } else if(waitCount[0].call_type === 'call'){
+            await removeWaitlistQueue({astroId: astrologer.astro_id, userId: waitCount[0].user_id, channelId: waitCount[0].channelId, callType:waitCount[0].user_calls_id}, 180000);
         }
       }
     }

@@ -72,8 +72,13 @@ const updateUserWallet = async (txn: Transaction, result: any): Promise<number> 
     const newBalance = parseInt(user.wallet) + cashbackAmount;
     user.wallet = String(newBalance);
     await user.save();
-    await sendRechargeMsg(user.phone, cashbackAmount, newBalance);
-    await sendWhatsAppRechargeMsg(user.phone, cashbackAmount, newBalance);
+    try {
+      
+      await sendRechargeMsg(user.phone, cashbackAmount, newBalance);
+      await sendWhatsAppRechargeMsg(user.phone, cashbackAmount, newBalance);
+    } catch (error) {
+      console.log("Error: ", error);
+    }
     return cashbackAmount;
   } else {
     await updateMaxMinute(txn, user, amountXGST);

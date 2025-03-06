@@ -4,6 +4,7 @@ import User from '../models/user.model';
 import Astrologer from '../models/astrologer.model';
 import { Op } from 'sequelize';
 import { logger } from '../utils/logger';
+import { removeWaitlistQueue } from '../queues/producer/waitlistQueue';
 
 interface NotificationPayload {
   notification_type: string;
@@ -53,21 +54,26 @@ const updateWaitlist = async (
       await astrologer.save();
     }
     
-  //   if (waitingList && waitingList.length) {
-  //     waitingList.forEach(async (wl: WaitingUser) => {
-  //       let wl_user: User | null = await User.findByPk(wl.user_id);
-  //       if (wl_user) {
-  //         const waitListNotice: NotificationPayload = {
-  //           notification_type: 'waitlist_updated',
-  //           firebaseChId: wl.fb_channelId,
-  //           channelId: wl.channelId!,
-  //           title: "LifeGuru",
-  //           body: 'Your waitlist position is updated',
-  //         };
-  //         // await sendNotification(wl_user.device_token, waitListNotice);
-  //       }
-  //     });
-  //   }
+    if (waitingList && waitingList.length) {
+      if(waitingList[0].call_type === 'chat'){ 
+        await removeWaitlistQueue({astroId: astrologer.astro_id, userId: waitingList[0].user_id, channelId: waitingList[0].channelId, callType:waitingList[0].call_type}, 180000);
+      } else if(waitingList[0].call_type === 'call'){
+          await removeWaitlistQueue({astroId: astrologer.astro_id, userId: waitingList[0].user_id, channelId: waitingList[0].channelId, callType:waitingList[0].user_calls_id}, 180000);
+      }
+      // waitingList.forEach(async (wl: WaitingUser) => {
+      //   let wl_user: User | null = await User.findByPk(wl.user_id);
+      //   if (wl_user) {
+      //     const waitListNotice: NotificationPayload = {
+      //       notification_type: 'waitlist_updated',
+      //       firebaseChId: wl.fb_channelId,
+      //       channelId: wl.channelId!,
+      //       title: "LifeGuru",
+      //       body: 'Your waitlist position is updated',
+      //     };
+      //     // await sendNotification(wl_user.device_token, waitListNotice);
+      //   }
+      // });
+    }
   } catch (error) {
     console.log("end chat error log: ", error);
     logger.error('Error in endChat:', error);

@@ -35,8 +35,8 @@ async function initializeServices() {
     logger.info(`Database connected to host: ${env.database.host}`);
 
     // Initialize Cron Jobs
-    // initCronJobs();
-    // logger.info('Cron jobs initialized successfully');
+    initCronJobs();
+    logger.info('Cron jobs initialized successfully');
 
     // Server port & host from env
     const port = env.server.port;

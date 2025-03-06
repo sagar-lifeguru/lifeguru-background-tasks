@@ -13,12 +13,13 @@ import Astrologer from '../../models/astrologer.model';
 import AstroNotification from '../../models/astroNotification.model';
 import callSettlement from '../../utils/callSettlement';
 import { ApiError } from '../../middlewares/error.middleware';
-
 import moment from 'moment';
 import util from 'util';
 import { UUID } from 'crypto';
 
 const redisDelAsync = util.promisify(redisClient.del).bind(redisClient);
+
+const RABBITMQ_URL = "amqp://rabbit_admin:R@bbitPa33w0rD@13.127.231.174";
 
 @Service()
 export class WaitlistConsumer {
@@ -27,49 +28,47 @@ export class WaitlistConsumer {
 
     async initialize(): Promise<void> {
         try {
-            this.connection = await connect(env.rabbitmq.url);
+            this.connection = await connect(RABBITMQ_URL);
             this.channel = await this.connection.createChannel();
 
             const astrologers = await Astrologer.findAll({
-                where: { is_delete: false, status: true, is_verified: true }
+                where: { is_delete: false, status: true, is_verified: true },
             });
+
             for (const astro of astrologers) {
                 await this.setupAstrologerQueue(astro.astro_id);
             }
 
-            logger.info('Waitlist consumer initialized');
+            logger.info("Waitlist consumer initialized");
         } catch (error) {
-            logger.error('Failed to initialize waitlist consumer: ', error);
+            logger.error("Failed to initialize waitlist consumer: ", error);
             throw error;
         }
     }
 
     private async setupAstrologerQueue(astroId: UUID): Promise<void> {
-        const delayExchange = `waitlist_delay_queue_${astroId}`;
         const queueName = `scheduled_task_queue_${astroId}`;
 
-        // Using TTL + Dead Letter Exchange instead of x-delayed-message
-        await this.channel.assertExchange(delayExchange, 'direct', { durable: true });
+        // 🛑 Delete queue first to avoid TTL mismatch issues
+        try {
+            await this.channel.deleteQueue(queueName);
+            logger.info(`Deleted old queue: ${queueName}`);
+        } catch (error) {
+            logger.warn(`Queue ${queueName} does not exist or could not be deleted`);
+        }
 
-        await this.channel.assertQueue(queueName, {
-            durable: true,
-            arguments: {
-                'x-message-ttl': 180000, // 3-minute delay
-                'x-dead-letter-exchange': delayExchange // Forward expired messages
-            }
-        });
-
-        await this.channel.bindQueue(queueName, delayExchange, queueName);
+        // Declare queue (it receives messages from delay queue after TTL)
+        await this.channel.assertQueue(queueName, { durable: true });
 
         this.channel.consume(queueName, async (msg) => {
             if (!msg) return;
             try {
-                const waitlistMessage: WaitlistMessage = JSON.parse(msg.content.toString());
+                const waitlistMessage = JSON.parse(msg.content.toString());
                 logger.info(`Processing waitlist message for astrologer ${astroId}`, waitlistMessage);
                 await this.processWaitlist(waitlistMessage);
                 this.channel.ack(msg);
             } catch (error) {
-                logger.error('Error processing waitlist message', error);
+                logger.error("Error processing waitlist message", error);
                 this.channel.nack(msg);
             }
         });
@@ -79,53 +78,59 @@ export class WaitlistConsumer {
 
     private async processWaitlist(waitlistMessage: any): Promise<void> {
         if (!waitlistMessage) return;
-        try {    
+        try {
             const { astroId, userId, channelId, callType } = waitlistMessage;
             const user = await User.findByPk(userId);
-            const astrologer = await Astrologer.findByPk(astroId);
+            const astrologer = await Astrologer.findOne({where: {astro_id: astroId}});
             let call: UserCall | null = null;
-            if (callType === 'chat') {
+
+            if (callType === "chat") {
                 call = await UserCall.findOne({ where: { channelId: channelId } });
-              } else if (callType === 'call') {
+            } else if (callType === "call") {
                 call = await UserCall.findOne({ where: { id: channelId } });
-              }
+            }
+
             if (!user || !astrologer || !call) {
-                logger.warn('User, Astrologer, or call not found');
+                logger.warn("User, Astrologer, or call not found");
                 return;
             }
+
             logger.info(`Removing user ${userId} from astrologer ${astroId} waitlist`);
-            const status = 'waitlist_removal';
-            if(call.call_status == 'waiting'){
-                await disconnectChat(call, user, astrologer, status)
-            }else if(call && call.call_status == 'initiated' && call.user_status == 'waiting' ){
+            const status = "waitlist_removal";
+
+            if (call.call_status === "waiting") {
+                await disconnectChat(call, user, astrologer, status);
+            } else if (call.call_status === "initiated" && call.user_status === "waiting") {
                 let endTime = new Date().toISOString();
                 let startTime = moment(call.startTime).toISOString();
                 let callDuration = Math.floor((new Date(endTime).getTime() - new Date(startTime).getTime()) / 1000 / 60);
-                if(callDuration <= 1){
-                    await disconnectChat(call, user, astrologer, status)
-                }else{
-                    await endChat(call, user, astrologer, status)
+                
+                if (callDuration <= 1) {
+                    await disconnectChat(call, user, astrologer, status);
+                } else {
+                    await endChat(call, user, astrologer, status);
                 }
-            }else{
-                throw new ApiError('Automatic waitlist removal throws error', 200);
+            } else {
+                throw new Error("Automatic waitlist removal error");
             }
+
+            // Send user a notification about expired waitlist position
             const endNotification = {
-                notification_type: 'waitlist_expired',
+                notification_type: "waitlist_expired",
                 firebaseChId: call.firebaseChId,
                 channelId: call.channelId,
-                title: 'LifeGuru',
-                body: 'Your waitlist turn has expired. Please try again later.',
+                title: "LifeGuru",
+                body: "Your waitlist turn has expired. Please try again later.",
             };
+
             await sendNotification(user.device_token, endNotification);
-            // this.channel.ack(waitlistMessage);
+
         } catch (error) {
-            // console.log('Error processing message', error);
-            logger.error('Error processing message', error);
-            // this.channel.nack(waitlistMessage);
+            console.log("Error processing message", error);
+            logger.error("Error processing message", error);
         }
     }
 }
-
 
     const delay = (ms: number): Promise<void> => {
         return new Promise<void>((resolve) => {
