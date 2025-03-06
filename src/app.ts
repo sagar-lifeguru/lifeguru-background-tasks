@@ -4,7 +4,7 @@ import { Container } from 'typedi';
 import { sequelize } from './config/database.config';
 import { logger } from './utils/logger';
 import { env } from './config/env.config';
-import { EmailConsumer } from './queues/consumers/email.consumer';
+// import { EmailConsumer } from './queues/consumers/email.consumer';
 import { WaitlistConsumer } from './queues/consumers/waitlist.consumer';
 import { initCronJobs } from './cron';
 
@@ -17,15 +17,15 @@ app.use(express.urlencoded({ extended: true }));
 
 // Initialize consumers
 // const emailConsumer = container.get(EmailConsumer);
-// const waitlistConsumer = container.get(WaitlistConsumer);
+const waitlistConsumer = container.get(WaitlistConsumer);
 
 // Start consumers
-// Promise.all([
-//   emailConsumer.initialize(),
-//   waitlistConsumer.initialize()
-// ]).catch(error => {
-//   logger.error('Failed to initialize queue consumers:', error);
-// });
+Promise.all([
+  // emailConsumer.initialize(),
+  waitlistConsumer.initialize()
+]).catch(error => {
+  logger.error('Failed to initialize queue consumers:', error);
+});
 
 async function initializeServices() {
   try {
@@ -35,8 +35,8 @@ async function initializeServices() {
     logger.info(`Database connected to host: ${env.database.host}`);
 
     // Initialize Cron Jobs
-    initCronJobs();
-    logger.info('Cron jobs initialized successfully');
+    // initCronJobs();
+    // logger.info('Cron jobs initialized successfully');
 
     // Server port & host from env
     const port = env.server.port;
