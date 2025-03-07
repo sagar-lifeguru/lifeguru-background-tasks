@@ -94,7 +94,7 @@ async function callSettlement(channelId: string): Promise<boolean | void> {
       await sendUserDebitMsg(user.phone, actualDeductedAmount, Number(user.wallet));
     }
   
-    if (call.callType === "chat" && Number(user.wallet) > 5 * astrologer.per_min_chat) {
+    if (call.callType === "chat"){
       const result = await fetchChatSummary(call.firebaseChId);
       if (result) {
         await ChatSummary.create({

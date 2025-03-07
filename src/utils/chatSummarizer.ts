@@ -37,11 +37,10 @@ const chatSummarizer = async (inputChat: string, lang: string): Promise<string |
     if (!apiKey) throw new Error("GEMINI_API_KEY is not defined");
     
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model: GenerativeModel = genAI.getGenerativeModel({ model: "gemini-1.0-pro", generationConfig, safetySettings: safetySettings as import("@google/generative-ai/dist/generative-ai").SafetySetting[] });
+    const model: GenerativeModel = genAI.getGenerativeModel({ model: "gemini-1.5-pro-001", generationConfig, safetySettings: safetySettings as import("@google/generative-ai/dist/generative-ai").SafetySetting[] });
     
     const inputData: string = `${inputChat}\n ${prompt} in ${lang}`;
     const result = await model.generateContent(inputData);
-    
     return result.response.text() || null;
   } catch (error) {
     console.error("Error in chatSummarizer:", error);
