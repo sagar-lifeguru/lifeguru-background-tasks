@@ -22,7 +22,7 @@ const waitlistConsumer = container.get(WaitlistConsumer);
 // Start consumers
 Promise.all([
   // emailConsumer.initialize(),
-  waitlistConsumer.initialize()
+  // waitlistConsumer.initialize()
 ]).catch(error => {
   logger.error('Failed to initialize queue consumers:', error);
 });
