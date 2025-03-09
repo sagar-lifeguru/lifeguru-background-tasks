@@ -13,7 +13,7 @@ const envSchema = Joi.object({
   DB_NAME: Joi.string().required(),
   DB_USER: Joi.string().required(),
   DB_PASS: Joi.string().required(),
-  DB_HOST: Joi.string().ip().required(),
+  DB_HOST: Joi.string().required(),
   DB_PORT: Joi.number().integer().required(),
   DB_DIALECT: Joi.string().valid('postgres', 'mysql', 'mariadb', 'sqlite', 'mssql').required(),
 
@@ -27,7 +27,7 @@ const envSchema = Joi.object({
 
   ASTROLGY_API_KEY: Joi.string().required(),
 
-  PAYMENT_MODE: Joi.string().valid('test', 'live').required(),
+  PAYMENT_MODE: Joi.string().valid('test', 'production').required(),
   INSTAMOJO_API_KEY: Joi.string().required(),
   INSTAMOJO_AUTH_TOKEN: Joi.string().required(),
   INSTAMOJO_API_KEY_TEST: Joi.string().required(),
