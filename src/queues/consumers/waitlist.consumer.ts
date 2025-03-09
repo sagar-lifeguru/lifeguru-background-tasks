@@ -19,7 +19,7 @@ import { UUID } from 'crypto';
 
 const redisDelAsync = util.promisify(redisClient.del).bind(redisClient);
 
-const RABBITMQ_URL = "amqp://rabbit_admin:R@bbitPa33w0rD@13.127.231.174";
+const RABBITMQ_URL = env.rabbitmq.url;
 
 @Service()
 export class WaitlistConsumer {
@@ -28,7 +28,7 @@ export class WaitlistConsumer {
 
     async initialize(): Promise<void> {
         try {
-            this.connection = await connect(RABBITMQ_URL);
+            this.connection = await connect(RABBITMQ_URL), {timeout: 10000};
             this.channel = await this.connection.createChannel();
 
             const astrologers = await Astrologer.findAll({
@@ -41,6 +41,7 @@ export class WaitlistConsumer {
 
             logger.info("Waitlist consumer initialized");
         } catch (error) {
+            console.log("Failed to initialize waitlist consumer: ",error);
             logger.error("Failed to initialize waitlist consumer: ", error);
             throw error;
         }

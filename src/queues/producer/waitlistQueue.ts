@@ -1,6 +1,7 @@
 import amqp, { Connection, Channel, Options } from "amqplib";
+import { env } from '../../config/env.config';
 
-const RABBITMQ_URL = "amqp://rabbit_admin:R@bbitPa33w0rD@13.127.231.174";
+const RABBITMQ_URL = env.rabbitmq.url;
 
 
 export async function removeWaitlistQueue(task: any, delay: number): Promise<void> {
